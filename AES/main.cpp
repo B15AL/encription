@@ -1,41 +1,37 @@
 #include <iostream>
-#include <iomanip>
 #include <array>
 #include "usekey.h"
 #include "aes.h"
 
 key my_key;
 
-void print_hex(const std::string& label, const std::array<uint8_t, 16>& block) {
-    std::cout << label << ": ";
-    for (uint8_t b : block) {
-        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)b << " ";
-    }
-    std::cout << std::dec << "\n";
-}
-
 int main() {
-    // Standard NIST AES-128 Test Vector
     std::string hexKey = "2b7e151628aed2a6abf7158809cf4f3c";
-    std::array<uint8_t, 16> plaintext = {
-        0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d,
-        0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34
+    
+    // Initialization Vector for CBC Mode
+    std::array<uint8_t, 16> iv = {
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
     };
 
     if (!my_key.loadInputKey(hexKey)) {
-        std::cerr << "Invalid key format!" << std::endl;
+        std::cerr << "Failed to load key." << std::endl;
         return 1;
     }
 
-    std::array<uint8_t, 16> state = plaintext;
-    
-    print_hex("Plaintext ", state);
+    std::string input_file = "test.txt";
+    std::string enc_file = "test.txt.enc";
+    std::string dec_file = "test_dec.txt";
 
-    encript(state);
-    print_hex("Ciphertext", state);
+    std::cout << "[+] Encrypting file: " << input_file << "..." << std::endl;
+    if (encrypt_file(input_file, enc_file, iv)) {
+        std::cout << "[+] Encryption successful -> " << enc_file << std::endl;
+    }
 
-    decrypt(state);
-    print_hex("Decrypted ", state);
+    std::cout << "[+] Decrypting file: " << enc_file << "..." << std::endl;
+    if (decrypt_file(enc_file, dec_file, iv)) {
+        std::cout << "[+] Decryption successful -> " << dec_file << std::endl;
+    }
 
     return 0;
 }
