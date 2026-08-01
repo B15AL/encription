@@ -7,7 +7,8 @@
 // CBC Encryption for Files
 bool encrypt_file(const std::string& input_path, const std::string& output_path, const std::array<uint8_t, 16>& iv) {
     std::ifstream infile(input_path, std::ios::binary);
-    std::ofstream outfile(output_path, std::ios::binary);
+    // MUST use std::ios::app here so we don't overwrite the IV header written by main.cpp
+    std::ofstream outfile(output_path, std::ios::binary | std::ios::app);
 
     if (!infile.is_open() || !outfile.is_open()) {
         std::cerr << "[-] Failed to open file streams." << std::endl;
@@ -20,6 +21,8 @@ bool encrypt_file(const std::string& input_path, const std::string& output_path,
     while (infile.good()) {
         infile.read(reinterpret_cast<char*>(block.data()), 16);
         std::streamsize bytes_read = infile.gcount();
+
+        if (bytes_read == 0) break; // Avoid trailing empty writes
 
         // Handle PKCS#7 Padding on the final block
         if (bytes_read < 16) {
@@ -60,6 +63,7 @@ bool encrypt_file(const std::string& input_path, const std::string& output_path,
 // CBC Decryption for Files
 bool decrypt_file(const std::string& input_path, const std::string& output_path, const std::array<uint8_t, 16>& iv) {
     std::ifstream infile(input_path, std::ios::binary | std::ios::ate);
+    // Overwrite the output file cleanly during decryption
     std::ofstream outfile(output_path, std::ios::binary);
 
     if (!infile.is_open() || !outfile.is_open()) {
@@ -68,13 +72,13 @@ bool decrypt_file(const std::string& input_path, const std::string& output_path,
     }
 
     std::streamsize file_size = infile.tellg();
-    if (file_size == 0 || file_size % 16 != 0) {
+    if (file_size < 32 || (file_size - 16) % 16 != 0) {
         std::cerr << "[-] Invalid ciphertext file size." << std::endl;
         return false;
     }
 
-    infile.seekg(0, std::ios::beg);
-    size_t total_blocks = file_size / 16;
+    infile.seekg(16, std::ios::beg);
+    size_t total_blocks = (file_size - 16) / 16;
 
     std::array<uint8_t, 16> prev_cipher = iv;
     std::array<uint8_t, 16> cipher_block;

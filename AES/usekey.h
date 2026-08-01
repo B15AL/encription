@@ -5,6 +5,7 @@
 #include<string>
 #include<array>
 #include<iomanip>
+#include <cctype>
 #include<cstdint>
 class key{
 
@@ -79,20 +80,27 @@ return x;
 }
 
 //function to take input of hex
-bool loadInputKey(const std::string& hexInp){
-  if(hexInp.length()!=32) return false;
-  for(size_t i =0 ; i<16 ; ++i){
+ bool loadInputKey(const std::string& hexStr) {
+    if (hexStr.length() != 32) return false;
 
-    std::string bytestr = hexInp.substr(i*2 , 2);
-    ori_key[i] = static_cast<uint8_t>(strtol(bytestr.c_str() , nullptr , 16));
+    std::array<uint8_t, 16> input_bytes;
 
+    for (size_t i = 0; i < 32; i += 2) {
+        std::string bytestr = hexStr.substr(i, 2);
+        
+        // Validate hex digits
+        if (!isxdigit(bytestr[0]) || !isxdigit(bytestr[1])) {
+            return false;
+        }
 
-
-  }
-  key_expansion(ori_key);
-  return true;
-}
-    // Formats and prints all 11 round keys cleanly in hex
+        uint8_t byte = static_cast<uint8_t>(strtol(bytestr.c_str(), nullptr, 16));
+        input_bytes[i / 2] = byte;
+    }
+    
+    // Run key schedule with parsed bytes
+    key_expansion(input_bytes);
+    return true;
+}   // Formats and prints all 11 round keys cleanly in hex
     void printRoundKeys() {
         for (size_t r = 0; r < 11; ++r) {
             std::cout << "Round " << std::setw(2) << std::setfill('0') << r << " Key: ";
