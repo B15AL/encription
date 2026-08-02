@@ -48,7 +48,7 @@ std::array<uint8_t , 16> shiftRow(std::array<uint8_t , 16> state){
 }
 
 //from here it is the finite field arithmatic
-uint8_t multy_by_2(uint8_t x){
+inline uint8_t multy_by_2(uint8_t x){
   bool temp = x&0x80;
   x=x<<1;
   if(temp){
